@@ -9,8 +9,8 @@ import {
   WifiOff,
   CloudUpload,
   RefreshCw,
-  Coins,
-  CheckCircle2
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -36,8 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
     syncWithCloud,
     cloudSyncStatus,
     printerConfig,
-    settings,
-    toggleCurrency
+    lockScreen,
+    t
   } = useApp();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -62,41 +62,31 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
-            Welcome back, {currentUser.name.split(' ')[0]}!
+            {t('welcomeBack')}, {currentUser.name.split(' ')[0]}!
             <span className="text-xl">👋</span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 font-normal">
-            Here's what's happening with your store today.
+            {t('storeSubtitle')}
           </p>
         </div>
       </div>
 
-      {/* Right Controls: Search, Sync/Offline, Printer, Currency, Notifications, Cart */}
+      {/* Right Controls: Search, Language, Sync/Offline, Printer, Currency, Notifications, Cart */}
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap justify-between md:justify-end">
         {/* Search Bar */}
-        <div className="relative flex-1 sm:w-64 md:w-72">
+        <div className="relative flex-1 sm:w-60 md:w-64">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search anything... ⌘K"
+            placeholder={t('searchPlaceholder')}
             className="w-full bg-[#f8fafc] border border-gray-200 text-gray-800 text-xs sm:text-sm rounded-xl pl-9 pr-8 py-2 focus:outline-hidden focus:border-[#21938c] focus:ring-2 focus:ring-[#21938c]/15 transition-all"
           />
           <kbd className="hidden sm:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400 bg-gray-200/60 rounded">
             ⌘K
           </kbd>
         </div>
-
-        {/* Currency Switcher */}
-        <button
-          onClick={toggleCurrency}
-          className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
-          title={`Ubah mata uang (Saat ini: ${settings.currency})`}
-        >
-          <Coins className="w-4 h-4 text-[#21938c]" />
-          <span>{settings.currency}</span>
-        </button>
 
         {/* Offline / Online Status Pill with manual toggle */}
         <button
@@ -106,12 +96,12 @@ export const Header: React.FC<HeaderProps> = ({
               ? 'bg-amber-100 text-amber-900 border border-amber-200'
               : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
           }`}
-          title={isOffline ? 'Mode Offline Aktif (Klik untuk Online)' : 'Terhubung ke Internet (Klik untuk simulasi Offline)'}
+          title={isOffline ? t('offlineTooltip') : t('onlineTooltip')}
         >
           {isOffline ? (
             <>
               <WifiOff className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-              <span className="hidden sm:inline">Offline</span>
+              <span className="hidden sm:inline">{t('offline')}</span>
               {pendingSyncCount > 0 && (
                 <span className="px-1.5 py-0.2 bg-amber-500 text-white text-[10px] font-bold rounded-full">
                   {pendingSyncCount}
@@ -121,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <>
               <Wifi className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">Online</span>
+              <span className="hidden sm:inline">{t('online')}</span>
             </>
           )}
         </button>
@@ -156,7 +146,7 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Printer className="w-4 h-4" />
           <span className="hidden md:inline font-medium">
-            {printerConfig.isConnected ? 'Printer Siap' : 'Printer'}
+            {printerConfig.isConnected ? t('printerReady') : t('printer')}
           </span>
         </button>
 
@@ -192,6 +182,17 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
         </div>
+
+        {/* Lock Screen / Ganti Kasir Button */}
+        <button
+          onClick={lockScreen}
+          className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 hover:bg-rose-50 hover:text-rose-700 text-gray-700 transition-colors border border-transparent hover:border-rose-200"
+          title="Kunci POS / Ganti Pengguna"
+          aria-label="Kunci POS"
+        >
+          <Lock className="w-4 h-4 text-gray-500 hover:text-rose-600" />
+          <span className="hidden xl:inline">Kunci POS</span>
+        </button>
 
         {/* Mobile Cart Trigger */}
         <button

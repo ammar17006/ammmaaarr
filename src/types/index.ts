@@ -7,6 +7,7 @@ export interface User {
   role: Role;
   avatar: string;
   pin: string; // 4-digit PIN for quick cashier login
+  password: string; // Sandi login akun
   phone?: string;
   isActive: boolean;
 }
@@ -84,7 +85,8 @@ export interface StoreSettings {
   address: string;
   phone: string;
   email: string;
-  currency: 'IDR' | 'USD';
+  currency: 'IDR';
+  language?: 'id';
   taxRate: number; // 0.08 for 8%, 0.11 for 11%
   enableTax: boolean;
   receiptHeader: string;

@@ -467,7 +467,7 @@ export const ReportsView: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-gray-500 mb-12">Manajer / Pemilik,</p>
-                  <p className="font-bold underline">John Doe (Admin)</p>
+                  <p className="font-bold underline">ammar (Admin)</p>
                 </div>
               </div>
             </div>

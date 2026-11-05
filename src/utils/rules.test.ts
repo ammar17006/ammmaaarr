@@ -99,7 +99,7 @@ test('calculateReportMetrics aggregates gross profit and payment stats', () => {
     amountPaid: 80000,
     change: 3000,
     cashierId: 'u1',
-    cashierName: 'John Doe',
+    cashierName: 'ammar',
     createdAt: new Date().toISOString(),
     status: 'completed',
     isSynced: true
@@ -117,12 +117,13 @@ test('calculateReportMetrics aggregates gross profit and payment stats', () => {
 
 test('generateThermalESCCommands produces valid ESC/POS byte sequence', () => {
   const mockSettings: StoreSettings = {
-    storeName: 'PosyMart Coffee & Bakery',
-    tagline: 'Best Brew in Town',
-    address: 'Jl. Merdeka No. 123',
-    phone: '0812-3456-7890',
-    email: 'info@posymart.com',
+    storeName: 'ammar kafe',
+    tagline: 'Nikmati Kopi Pilihan & Santapan Hangat',
+    address: 'Jln Bakung, Rejodadi',
+    phone: '085643094039',
+    email: 'ammarkafe@gmail.com',
     currency: 'IDR',
+    language: 'id',
     taxRate: 0.1,
     enableTax: true,
     receiptHeader: 'Selamat Datang',
@@ -149,7 +150,7 @@ test('generateThermalESCCommands produces valid ESC/POS byte sequence', () => {
     amountPaid: 30000,
     change: 2500,
     cashierId: 'u1',
-    cashierName: 'John Doe',
+    cashierName: 'ammar',
     createdAt: new Date().toISOString(),
     status: 'completed',
     isSynced: true

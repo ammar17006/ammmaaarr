@@ -21,28 +21,28 @@ export const DiscountsView: React.FC = () => {
       id: 'p1',
       code: 'HAPPYHOURS',
       title: 'Happy Hours Coffee Promo',
-      discount: settings.currency === 'USD' ? 2.0 : 15000,
+      discount: 15000,
       description: 'Potongan langsung untuk pembelian kopi di jam siang',
       expiry: '31 Des 2026',
-      minSpend: settings.currency === 'USD' ? 10.0 : 50000
+      minSpend: 50000
     },
     {
       id: 'p2',
       code: 'NEWCUSTOMER',
       title: 'Voucher Pelanggan Baru',
-      discount: settings.currency === 'USD' ? 1.5 : 10000,
-      description: 'Diskon selamat datang untuk member baru PosyMart',
+      discount: 10000,
+      description: 'Diskon selamat datang untuk member baru ammar kafe',
       expiry: '31 Des 2026',
-      minSpend: settings.currency === 'USD' ? 8.0 : 35000
+      minSpend: 35000
     },
     {
       id: 'p3',
       code: 'BAKERYDAY',
       title: 'Bakery & Dessert Special',
-      discount: settings.currency === 'USD' ? 1.0 : 8000,
+      discount: 8000,
       description: 'Diskon bundling aneka kue, bagel, dan muffin',
       expiry: '31 Des 2026',
-      minSpend: settings.currency === 'USD' ? 5.0 : 25000
+      minSpend: 25000
     }
   ];
 

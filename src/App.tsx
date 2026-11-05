@@ -15,12 +15,18 @@ import { CheckoutModal } from './components/CheckoutModal';
 import { ReceiptModal } from './components/ReceiptModal';
 import { PrinterModal } from './components/PrinterModal';
 import { MobileCartDrawer } from './components/MobileCartDrawer';
+import { LoginView } from './components/LoginView';
 
 const AppContent: React.FC = () => {
-  const { activeView } = useApp();
+  const { activeView, isAuthenticated } = useApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [isPrinterModalOpen, setIsPrinterModalOpen] = useState(false);
+
+  // If not authenticated or locked, display the POS Login Screen
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
 
   return (
     <div className="flex h-screen bg-[#f8fafc] text-gray-800 font-sans antialiased overflow-hidden">

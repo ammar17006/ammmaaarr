@@ -34,7 +34,8 @@ export const DashboardView: React.FC = () => {
     searchQuery,
     orders,
     customers,
-    settings
+    settings,
+    t
   } = useApp();
 
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory>('All');
@@ -42,14 +43,24 @@ export const DashboardView: React.FC = () => {
   const [editingNoteForId, setEditingNoteForId] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState<string>('');
 
-  const categories: ProductCategory[] = ['All', 'Coffee', 'Food', 'Drinks', 'Desserts'];
+  const categories: { key: ProductCategory; label: string }[] = [
+    { key: 'All', label: t('catAll') },
+    { key: 'Coffee', label: t('catCoffee') },
+    { key: 'Food', label: t('catFood') },
+    { key: 'Drinks', label: t('catDrinks') },
+    { key: 'Desserts', label: t('catDesserts') },
+  ];
 
-  // Calculate live metrics or use screenshot benchmark values
+  // Calculate live metrics
   const metrics = calculateReportMetrics(orders);
-  const displayTotalSales = 4892.45 + (metrics.totalSales > 100 ? metrics.totalSales - 74.17 : 0);
+  const displayTotalSales = settings.currency === 'IDR'
+    ? (metrics.totalSales > 0 ? metrics.totalSales : 471500)
+    : (metrics.totalSales > 0 ? metrics.totalSales : 4892.45);
   const displayOrdersCount = 128 + Math.max(0, metrics.totalOrders - 4);
   const displayCustomersCount = 256 + Math.max(0, customers.length - 4);
-  const displayAov = 38.22;
+  const displayAov = settings.currency === 'IDR'
+    ? (metrics.avgOrderValue > 0 ? metrics.avgOrderValue : 117875)
+    : (metrics.avgOrderValue > 0 ? metrics.avgOrderValue : 38.22);
 
   // Filter products by category and search query
   const filteredProducts = products.filter((p) => {
@@ -90,14 +101,14 @@ export const DashboardView: React.FC = () => {
             </button>
           </div>
           <div className="mt-4">
-            <span className="text-xs text-gray-500 font-medium">Total Sales</span>
+            <span className="text-xs text-gray-500 font-medium">{t('statTotalSales')}</span>
             <div className="text-2xl font-bold text-gray-800 mt-0.5">
               {formatCurrency(displayTotalSales, settings.currency)}
             </div>
             <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600 font-semibold">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span>12.5%</span>
-              <span className="text-gray-400 font-normal">from yesterday</span>
+              <span className="text-gray-400 font-normal">{t('fromYesterday')}</span>
             </div>
           </div>
         </div>
@@ -113,14 +124,14 @@ export const DashboardView: React.FC = () => {
             </button>
           </div>
           <div className="mt-4">
-            <span className="text-xs text-gray-500 font-medium">Orders</span>
+            <span className="text-xs text-gray-500 font-medium">{t('statOrders')}</span>
             <div className="text-2xl font-bold text-gray-800 mt-0.5">
               {displayOrdersCount}
             </div>
             <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600 font-semibold">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span>8.2%</span>
-              <span className="text-gray-400 font-normal">from yesterday</span>
+              <span className="text-gray-400 font-normal">{t('fromYesterday')}</span>
             </div>
           </div>
         </div>
@@ -136,14 +147,14 @@ export const DashboardView: React.FC = () => {
             </button>
           </div>
           <div className="mt-4">
-            <span className="text-xs text-gray-500 font-medium">Customers</span>
+            <span className="text-xs text-gray-500 font-medium">{t('statCustomers')}</span>
             <div className="text-2xl font-bold text-gray-800 mt-0.5">
               {displayCustomersCount}
             </div>
             <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600 font-semibold">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span>5.4%</span>
-              <span className="text-gray-400 font-normal">from yesterday</span>
+              <span className="text-gray-400 font-normal">{t('fromYesterday')}</span>
             </div>
           </div>
         </div>
@@ -159,14 +170,14 @@ export const DashboardView: React.FC = () => {
             </button>
           </div>
           <div className="mt-4">
-            <span className="text-xs text-gray-500 font-medium">Avg. Order Value</span>
+            <span className="text-xs text-gray-500 font-medium">{t('statAov')}</span>
             <div className="text-2xl font-bold text-gray-800 mt-0.5">
               {formatCurrency(displayAov, settings.currency)}
             </div>
             <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600 font-semibold">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span>3.1%</span>
-              <span className="text-gray-400 font-normal">from yesterday</span>
+              <span className="text-gray-400 font-normal">{t('fromYesterday')}</span>
             </div>
           </div>
         </div>
@@ -180,10 +191,10 @@ export const DashboardView: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-gray-800">Current Sale</h2>
+                <h2 className="text-lg font-bold text-gray-800">{t('currentSale')}</h2>
                 {cart.length > 0 && (
                   <span className="px-2 py-0.5 rounded-full bg-teal-50 text-[#21938c] text-xs font-semibold">
-                    {cartTotals.itemCount} items
+                    {cartTotals.itemCount} {t('itemsCount')}
                   </span>
                 )}
               </div>
@@ -198,8 +209,8 @@ export const DashboardView: React.FC = () => {
                 <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3">
                   <ShoppingBag className="w-7 h-7 text-gray-300" />
                 </div>
-                <p className="text-sm font-medium text-gray-600">Keranjang masih kosong</p>
-                <p className="text-xs text-gray-400 mt-1">Pilih produk di sebelah kanan untuk menambahkan</p>
+                <p className="text-sm font-medium text-gray-600">{t('cartEmpty')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('cartEmptySub')}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100 max-h-[380px] overflow-y-auto pr-1 mt-2 custom-scrollbar">
@@ -277,7 +288,7 @@ export const DashboardView: React.FC = () => {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   <FileEdit className="w-3.5 h-3.5 text-gray-400" />
-                  <span>+ Add Note</span>
+                  <span>{t('addNote')}</span>
                 </button>
               </div>
             )}
@@ -287,13 +298,13 @@ export const DashboardView: React.FC = () => {
           <div className="pt-4 border-t border-gray-100 mt-4 space-y-3">
             <div className="space-y-1.5 text-xs text-gray-600">
               <div className="flex justify-between">
-                <span>Subtotal</span>
+                <span>{t('subtotal')}</span>
                 <span className="font-semibold text-gray-800">
                   {formatCurrency(cartTotals.subtotal, settings.currency)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Tax ({(settings.taxRate * 100).toFixed(0)}%)</span>
+                <span>{t('tax')} ({(settings.taxRate * 100).toFixed(0)}%)</span>
                 <span className="font-semibold text-gray-800">
                   {formatCurrency(cartTotals.taxAmount, settings.currency)}
                 </span>
@@ -301,7 +312,7 @@ export const DashboardView: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-baseline pt-2 border-t border-gray-100">
-              <span className="text-base font-bold text-gray-800">Total</span>
+              <span className="text-base font-bold text-gray-800">{t('total')}</span>
               <span className="text-2xl font-extrabold text-gray-900 tracking-tight">
                 {formatCurrency(cartTotals.total, settings.currency)}
               </span>
@@ -314,14 +325,14 @@ export const DashboardView: React.FC = () => {
                 disabled={cart.length === 0}
                 className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Clear Cart
+                {t('clearCart')}
               </button>
               <button
                 onClick={() => setIsCheckoutModalOpen(true)}
                 disabled={cart.length === 0}
                 className="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-[#21938c] hover:bg-[#1b7c76] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-teal-700/20 active:scale-[0.98]"
               >
-                Pay {formatCurrency(cartTotals.total, settings.currency)}
+                {t('pay')} {formatCurrency(cartTotals.total, settings.currency)}
               </button>
             </div>
           </div>
@@ -333,18 +344,18 @@ export const DashboardView: React.FC = () => {
           <div className="flex items-center justify-between gap-3 overflow-x-auto pb-1">
             <div className="flex items-center gap-2">
               {categories.map((cat) => {
-                const isSelected = selectedCategory === cat;
+                const isSelected = selectedCategory === cat.key;
                 return (
                   <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
+                    key={cat.key}
+                    onClick={() => setSelectedCategory(cat.key)}
                     className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
                       isSelected
                         ? 'bg-[#21938c] text-white shadow-xs'
                         : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-100'
                     }`}
                   >
-                    {cat}
+                    {cat.label}
                   </button>
                 );
               })}

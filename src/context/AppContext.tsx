@@ -23,6 +23,7 @@ import {
   generateInvoiceNumber,
   generateThermalESCCommands
 } from '../utils/rules';
+import { translations, Language } from '../utils/translations';
 
 interface AppContextType {
   // Navigation & View
@@ -75,9 +76,13 @@ interface AppContextType {
   // Users & Auth
   currentUser: User;
   users: User[];
+  isAuthenticated: boolean;
+  setIsAuthenticated: (auth: boolean) => void;
   switchUser: (user: User) => void;
   addUser: (user: Omit<User, 'id'>) => void;
-  verifyPinAndLogin: (userId: string, pin: string) => boolean;
+  verifyPinAndLogin: (userId: string, pinOrPassword: string) => boolean;
+  loginWithPasswordOrPin: (identifier: string, secret: string) => { success: boolean; message?: string };
+  lockScreen: () => void;
 
   // Offline & Backup
   isOffline: boolean;
@@ -96,24 +101,42 @@ interface AppContextType {
   connectUSBPrinter: () => Promise<boolean>;
   printReceipt: (order: Order) => Promise<boolean>;
 
-  // Settings
+  // Settings & Localization
   settings: StoreSettings;
   updateSettings: (settings: Partial<StoreSettings>) => void;
   toggleCurrency: () => void;
+  language: 'id' | 'en';
+  setLanguage: (lang: 'id' | 'en') => void;
+  t: (key: keyof typeof import('../utils/translations').translations['id']) => string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'posymart_products_v1',
-  ORDERS: 'posymart_orders_v1',
-  CART: 'posymart_cart_v1',
-  USERS: 'posymart_users_v1',
-  CURRENT_USER: 'posymart_current_user_v1',
-  CUSTOMERS: 'posymart_customers_v1',
-  SETTINGS: 'posymart_settings_v1',
-  PENDING_SYNC: 'posymart_pending_sync_v1'
+  PRODUCTS: 'ammarkafe_products_v2',
+  ORDERS: 'ammarkafe_orders_v2',
+  CART: 'ammarkafe_cart_v2',
+  USERS: 'ammarkafe_users_v2',
+  CURRENT_USER: 'ammarkafe_current_user_v2',
+  CUSTOMERS: 'ammarkafe_customers_v2',
+  SETTINGS: 'ammarkafe_settings_v2',
+  PENDING_SYNC: 'ammarkafe_pending_sync_v2'
 };
+
+// Automatic cleanup of legacy PosyMart caches with old dollar prices
+try {
+  [
+    'posymart_products_v1',
+    'posymart_orders_v1',
+    'posymart_cart_v1',
+    'posymart_users_v1',
+    'posymart_current_user_v1',
+    'posymart_settings_v1',
+    'posymart_pending_sync_v1'
+  ].forEach((k) => localStorage.removeItem(k));
+} catch {
+  // Ignore in non-browser contexts
+}
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Navigation
@@ -125,24 +148,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Settings
   const [settings, setSettings] = useState<StoreSettings>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          ...INITIAL_SETTINGS,
+          ...parsed,
+          storeName: 'ammar kafe',
+          address: 'Jln Bakung, Rejodadi',
+          phone: '085643094039',
+          language: 'id' as const,
+          currency: 'IDR' as const
+        };
+      } catch {
+        return INITIAL_SETTINGS;
+      }
+    }
+    return INITIAL_SETTINGS;
   });
 
-  // Users
+  const language = 'id';
+
+  const setLanguage = (_lang?: any) => {
+    // Pure Indonesian only
+  };
+
+  const t = (key: keyof typeof translations['id']): string => {
+    return translations['id'][key] || String(key);
+  };
+
+  // Users: Migrated to ammar (admin), jamil (kasir), and saeja (kasir)
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.USERS);
-    return saved ? JSON.parse(saved) : INITIAL_USERS;
+    if (saved) {
+      try {
+        const parsed: User[] = JSON.parse(saved);
+        const hasAmmar = parsed.some((u) => u.name.toLowerCase() === 'ammar');
+        const hasOldNames = parsed.some((u) => u.name === 'John Doe' || u.name === 'Sarah Jenkins' || u.name === 'Budi Santoso');
+        const hasMissingPasswords = parsed.some((u) => !u.password);
+        if (!hasAmmar || hasOldNames || hasMissingPasswords) {
+          return INITIAL_USERS;
+        }
+        return parsed;
+      } catch {
+        return INITIAL_USERS;
+      }
+    }
+    return INITIAL_USERS;
   });
 
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    return saved ? JSON.parse(saved) : INITIAL_USERS[0];
+    if (saved) {
+      try {
+        const parsed: User = JSON.parse(saved);
+        if (parsed.name === 'John Doe' || parsed.name === 'Sarah Jenkins' || parsed.name === 'Budi Santoso') {
+          return INITIAL_USERS[0];
+        }
+        return parsed;
+      } catch {
+        return INITIAL_USERS[0];
+      }
+    }
+    return INITIAL_USERS[0];
   });
 
-  // Products
+  // Products: Ensure prices are normal Rupiah prices (e.g. Rp 25.000, not Rp 4)
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+    if (saved) {
+      try {
+        const parsed: Product[] = JSON.parse(saved);
+        // If any price is low like 3.5 or less than 1000, reset to INITIAL_PRODUCTS
+        if (parsed.some((p) => p.price < 1000)) {
+          return INITIAL_PRODUCTS;
+        }
+        return parsed;
+      } catch {
+        return INITIAL_PRODUCTS;
+      }
+    }
+    return INITIAL_PRODUCTS;
   });
 
   // Customers
@@ -154,13 +240,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Orders
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ORDERS);
-    return saved ? JSON.parse(saved) : INITIAL_ORDERS;
+    if (saved) {
+      try {
+        const parsed: Order[] = JSON.parse(saved);
+        if (parsed.some((o) => o.total < 1000)) {
+          return INITIAL_ORDERS;
+        }
+        return parsed;
+      } catch {
+        return INITIAL_ORDERS;
+      }
+    }
+    return INITIAL_ORDERS;
   });
 
-  // Cart
+  // Cart: Ensure items in cart have normal Rupiah prices
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CART);
-    return saved ? JSON.parse(saved) : INITIAL_CART;
+    if (saved) {
+      try {
+        const parsed: CartItem[] = JSON.parse(saved);
+        if (parsed.some((item) => item.product.price < 1000)) {
+          return INITIAL_CART;
+        }
+        return parsed;
+      } catch {
+        return INITIAL_CART;
+      }
+    }
+    return INITIAL_CART;
   });
   const [orderDiscount, setOrderDiscount] = useState<number>(0);
 
@@ -410,18 +518,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // Users & Multi-level auth
-  const switchUser = (user: User) => {
-    setCurrentUser(user);
+  // Users & Multi-level auth with Password and PIN
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+
+  const lockScreen = () => {
+    setIsAuthenticated(false);
   };
 
-  const verifyPinAndLogin = (userId: string, pin: string): boolean => {
+  const switchUser = (user: User) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+  };
+
+  const verifyPinAndLogin = (userId: string, pinOrPassword: string): boolean => {
     const target = users.find((u) => u.id === userId);
-    if (target && target.pin === pin) {
+    if (!target) return false;
+    const clean = pinOrPassword.trim();
+    if (target.pin === clean || target.password === clean) {
       setCurrentUser(target);
+      setIsAuthenticated(true);
       return true;
     }
     return false;
+  };
+
+  const loginWithPasswordOrPin = (identifier: string, secret: string): { success: boolean; message?: string } => {
+    const cleanId = identifier.trim().toLowerCase();
+    const cleanSecret = secret.trim();
+
+    if (!cleanId) {
+      return { success: false, message: 'Silakan pilih atau masukkan akun pengguna.' };
+    }
+    if (!cleanSecret) {
+      return { success: false, message: 'Silakan masukkan kata sandi atau PIN.' };
+    }
+
+    const target = users.find(
+      (u) =>
+        u.id === identifier ||
+        u.name.toLowerCase() === cleanId ||
+        u.email.toLowerCase() === cleanId
+    );
+
+    if (!target) {
+      return { success: false, message: 'Akun pengguna tidak ditemukan. Silakan periksa kembali.' };
+    }
+
+    if (target.password === cleanSecret || target.pin === cleanSecret) {
+      setCurrentUser(target);
+      setIsAuthenticated(true);
+      return { success: true };
+    }
+
+    return { success: false, message: 'Kata sandi atau PIN salah. Silakan coba lagi.' };
   };
 
   const addUser = (userData: Omit<User, 'id'>) => {
@@ -587,7 +736,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const toggleCurrency = () => {
     setSettings((prev) => ({
       ...prev,
-      currency: prev.currency === 'USD' ? 'IDR' : 'USD'
+      currency: 'IDR'
     }));
   };
 
@@ -623,9 +772,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addCustomer,
         currentUser,
         users,
+        isAuthenticated,
+        setIsAuthenticated,
         switchUser,
         addUser,
         verifyPinAndLogin,
+        loginWithPasswordOrPin,
+        lockScreen,
         isOffline,
         setIsOffline,
         pendingSyncCount: pendingSync.length,
@@ -641,7 +794,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         printReceipt,
         settings,
         updateSettings,
-        toggleCurrency
+        toggleCurrency,
+        language,
+        setLanguage,
+        t
       }}
     >
       {children}

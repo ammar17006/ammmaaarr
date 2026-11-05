@@ -16,7 +16,8 @@ export const ReceiptModal: React.FC = () => {
     activeReceiptOrder,
     setActiveReceiptOrder,
     settings,
-    printerConfig
+    printerConfig,
+    t
   } = useApp();
 
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -35,6 +36,8 @@ export const ReceiptModal: React.FC = () => {
 
   const handleShareWhatsApp = () => {
     const text = `*STRUK PEMBAYARAN ${settings.storeName.toUpperCase()}*\n` +
+      `Alamat: ${settings.address}\n` +
+      `Telp: ${settings.phone}\n` +
       `No. Invoice: ${order.invoiceNumber}\n` +
       `Tanggal: ${new Date(order.createdAt).toLocaleString('id-ID')}\n` +
       `Kasir: ${order.cashierName}\n` +
@@ -61,8 +64,8 @@ export const ReceiptModal: React.FC = () => {
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900">Transaksi Berhasil</h3>
-              <p className="text-[11px] text-gray-500">Struk siap dicetak ke thermal printer</p>
+              <h3 className="text-sm font-bold text-gray-900">{t('receiptTitle')}</h3>
+              <p className="text-[11px] text-gray-500">{t('receiptSubtitle')}</p>
             </div>
           </div>
           <button
@@ -156,11 +159,11 @@ export const ReceiptModal: React.FC = () => {
               <span>{formatCurrency(order.total, settings.currency)}</span>
             </div>
             <div className="flex justify-between pt-1">
-              <span>Bayar ({order.paymentMethod.toUpperCase()})</span>
+              <span>{t('paidLabel')} ({order.paymentMethod.toUpperCase()})</span>
               <span>{formatCurrency(order.amountPaid, settings.currency)}</span>
             </div>
             <div className="flex justify-between font-bold text-gray-900">
-              <span>Kembalian</span>
+              <span>{t('changeLabel')}</span>
               <span>{formatCurrency(order.change, settings.currency)}</span>
             </div>
           </div>
@@ -186,7 +189,7 @@ export const ReceiptModal: React.FC = () => {
                 <span className="text-[9px] text-gray-400 tracking-widest">{order.invoiceNumber}</span>
               </div>
             </div>
-            <p className="text-[9px] text-gray-400">Powered by PosyMart Cloud POS</p>
+            <p className="text-[9px] text-gray-400">Powered by {settings.storeName || 'ammar kafe'} POS</p>
           </div>
         </div>
 
@@ -206,14 +209,14 @@ export const ReceiptModal: React.FC = () => {
               className="py-2.5 px-4 rounded-xl bg-[#21938c] text-white text-xs font-bold hover:bg-[#1b7c76] transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak Struk Thermal</span>
+              <span>{t('printThermal')}</span>
             </button>
             <button
               onClick={handleShareWhatsApp}
               className="py-2.5 px-4 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
               <Share2 className="w-4 h-4" />
-              <span>Kirim WhatsApp</span>
+              <span>{t('sendWhatsApp')}</span>
             </button>
           </div>
 
@@ -221,7 +224,7 @@ export const ReceiptModal: React.FC = () => {
             onClick={() => setActiveReceiptOrder(null)}
             className="w-full py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            Transaksi Baru
+            {t('newTransaction')}
           </button>
         </div>
       </div>

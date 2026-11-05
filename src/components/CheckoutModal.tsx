@@ -24,7 +24,8 @@ export const CheckoutModal: React.FC = () => {
     customers,
     addCustomer,
     settings,
-    printerConfig
+    printerConfig,
+    t
   } = useApp();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
@@ -47,23 +48,14 @@ export const CheckoutModal: React.FC = () => {
   const change = calculateChange(numericAmountPaid, total);
   const isCashUnderpaid = paymentMethod === 'cash' && numericAmountPaid < total;
 
-  // Preset cash buttons based on currency
-  const isUSD = settings.currency === 'USD';
-  const quickCashOptions = isUSD
-    ? [
-        { label: 'Uang Pas', value: total },
-        { label: '$20', value: 20 },
-        { label: '$30', value: 30 },
-        { label: '$50', value: 50 },
-        { label: '$100', value: 100 },
-      ]
-    : [
-        { label: 'Uang Pas', value: total },
-        { label: 'Rp 20.000', value: 20000 },
-        { label: 'Rp 50.000', value: 50000 },
-        { label: 'Rp 100.000', value: 100000 },
-        { label: 'Rp 200.000', value: 200000 },
-      ];
+  // Preset cash buttons for Rupiah (IDR)
+  const quickCashOptions = [
+    { label: 'Uang Pas', value: total },
+    { label: 'Rp 50.000', value: 50000 },
+    { label: 'Rp 100.000', value: 100000 },
+    { label: 'Rp 150.000', value: 150000 },
+    { label: 'Rp 200.000', value: 200000 },
+  ];
 
   const handleQuickCash = (value: number) => {
     setAmountPaidInput(String(value));
@@ -100,8 +92,8 @@ export const CheckoutModal: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-gray-100">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Pembayaran Kasir</h2>
-            <p className="text-xs text-gray-500">Pilih metode pembayaran dan masukkan nominal</p>
+            <h2 className="text-xl font-bold text-gray-900">{t('checkoutTitle')}</h2>
+            <p className="text-xs text-gray-500">{t('checkoutSubtitle')}</p>
           </div>
           <button
             onClick={() => setIsCheckoutModalOpen(false)}
@@ -115,13 +107,13 @@ export const CheckoutModal: React.FC = () => {
         {/* Total Banner */}
         <div className="my-4 p-4 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-teal-800 uppercase tracking-wider">Total Tagihan</span>
+            <span className="text-xs font-semibold text-teal-800 uppercase tracking-wider">{t('totalBill')}</span>
             <div className="text-3xl font-extrabold text-[#21938c]">
               {formatCurrency(total, settings.currency)}
             </div>
           </div>
           <div className="text-right text-xs text-teal-700">
-            <span>{cartTotals.itemCount} Item dalam keranjang</span>
+            <span>{cartTotals.itemCount} {t('itemsCount')}</span>
           </div>
         </div>
 
@@ -130,13 +122,13 @@ export const CheckoutModal: React.FC = () => {
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-gray-400" />
-              <span>Pelanggan</span>
+              <span>{t('customerLabel')}</span>
             </label>
             <button
               onClick={() => setShowAddCustomer(!showAddCustomer)}
               className="text-xs font-semibold text-[#21938c] hover:underline"
             >
-              {showAddCustomer ? 'Batal' : '+ Pelanggan Baru'}
+              {showAddCustomer ? t('cancel') : t('newCustomer')}
             </button>
           </div>
 
@@ -181,7 +173,7 @@ export const CheckoutModal: React.FC = () => {
 
         {/* Payment Methods Buttons */}
         <div className="mb-4">
-          <label className="text-xs font-bold text-gray-700 block mb-2">Metode Pembayaran</label>
+          <label className="text-xs font-bold text-gray-700 block mb-2">{t('paymentMethod')}</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <button
               type="button"
@@ -196,7 +188,7 @@ export const CheckoutModal: React.FC = () => {
               }`}
             >
               <Banknote className="w-5 h-5" />
-              <span className="text-xs">Tunai (Cash)</span>
+              <span className="text-xs">{t('cash')}</span>
             </button>
 
             <button
@@ -209,7 +201,7 @@ export const CheckoutModal: React.FC = () => {
               }`}
             >
               <QrCode className="w-5 h-5" />
-              <span className="text-xs">QRIS</span>
+              <span className="text-xs">{t('qris')}</span>
             </button>
 
             <button
@@ -222,7 +214,7 @@ export const CheckoutModal: React.FC = () => {
               }`}
             >
               <CreditCard className="w-5 h-5" />
-              <span className="text-xs">Debit/Kredit</span>
+              <span className="text-xs">{t('debit')}</span>
             </button>
 
             <button
@@ -235,7 +227,7 @@ export const CheckoutModal: React.FC = () => {
               }`}
             >
               <Building className="w-5 h-5" />
-              <span className="text-xs">Transfer Bank</span>
+              <span className="text-xs">{t('transfer')}</span>
             </button>
           </div>
         </div>
@@ -244,7 +236,7 @@ export const CheckoutModal: React.FC = () => {
         {paymentMethod === 'cash' && (
           <div className="space-y-3 p-4 bg-[#f8fafc] rounded-2xl border border-gray-100">
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Nominal Uang Diterima</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">{t('cashReceived')}</label>
               <div className="relative">
                 <input
                   type="number"
@@ -266,21 +258,21 @@ export const CheckoutModal: React.FC = () => {
                   onClick={() => handleQuickCash(opt.value)}
                   className="px-3 py-1.5 bg-white border border-gray-200 hover:border-[#21938c] hover:text-[#21938c] rounded-xl text-xs font-semibold text-gray-700 transition-colors shadow-2xs"
                 >
-                  {opt.label}
+                  {opt.label === 'Uang Pas' ? t('exactAmount') : opt.label}
                 </button>
               ))}
             </div>
 
             {/* Change Display */}
             <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-600">Kembalian:</span>
+              <span className="text-xs font-bold text-gray-600">{t('changeLabel')}:</span>
               <span
                 className={`text-lg font-extrabold ${
                   isCashUnderpaid ? 'text-rose-600' : 'text-emerald-600'
                 }`}
               >
                 {isCashUnderpaid
-                  ? `Kurang ${formatCurrency(total - numericAmountPaid, settings.currency)}`
+                  ? `${t('underpaid')} ${formatCurrency(total - numericAmountPaid, settings.currency)}`
                   : formatCurrency(change, settings.currency)}
               </span>
             </div>
@@ -380,7 +372,7 @@ export const CheckoutModal: React.FC = () => {
             onClick={() => setIsCheckoutModalOpen(false)}
             className="w-1/3 py-3 rounded-2xl text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
           >
-            Batal
+            {t('cancel')}
           </button>
           <button
             type="button"
@@ -389,7 +381,7 @@ export const CheckoutModal: React.FC = () => {
             className="w-2/3 py-3 rounded-2xl text-xs sm:text-sm font-bold text-white bg-[#21938c] hover:bg-[#1b7c76] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-teal-700/20 active:scale-[0.98] flex items-center justify-center gap-2"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>Selesaikan & Cetak Struk</span>
+            <span>{t('finalizePrint')}</span>
           </button>
         </div>
       </div>

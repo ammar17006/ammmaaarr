@@ -29,13 +29,18 @@ export const SettingsView: React.FC = () => {
     cloudSyncStatus,
     exportBackupJSON,
     restoreBackupJSON,
-    resetToDefaultData
+    resetToDefaultData,
+    t
   } = useApp();
 
   const [formData, setFormData] = useState({ ...settings });
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    setFormData({ ...settings });
+  }, [settings]);
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,27 +216,23 @@ export const SettingsView: React.FC = () => {
           </div>
 
           <div>
-            <label className="font-bold text-gray-700 block mb-1">Mata Uang (Currency)</label>
-            <select
-              value={formData.currency}
-              onChange={(e) => setFormData({ ...formData, currency: e.target.value as 'USD' | 'IDR' })}
-              className="w-full p-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#21938c]"
-            >
-              <option value="USD">USD ($) - Sesuai Cuplikan Layar</option>
-              <option value="IDR">Rupiah (Rp) - Format Indonesia</option>
-            </select>
+            <label className="font-bold text-gray-700 block mb-1">Mata Uang Transaksi</label>
+            <div className="w-full p-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-xs flex items-center justify-between">
+              <span className="font-semibold">Rupiah Indonesia (Rp - IDR)</span>
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Aktif (IDR)</span>
+            </div>
           </div>
 
           <div>
-            <label className="font-bold text-gray-700 block mb-1">Persentase Pajak (PPN / Tax)</label>
+            <label className="font-bold text-gray-700 block mb-1">{t('taxRateLabel')}</label>
             <select
               value={formData.taxRate}
               onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
               className="w-full p-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#21938c]"
             >
-              <option value="0.08">8% (Tax Sesuai Screenshot)</option>
-              <option value="0.11">11% (PPN Indonesia)</option>
               <option value="0.10">10% (PB1 Resto/Kafe)</option>
+              <option value="0.11">11% (PPN Indonesia)</option>
+              <option value="0.08">8% (Standard POS)</option>
               <option value="0">0% (Bebas Pajak)</option>
             </select>
           </div>
