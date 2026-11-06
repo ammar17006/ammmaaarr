@@ -38,6 +38,19 @@ export interface CartItem {
 
 export type PaymentMethod = 'cash' | 'qris' | 'debit' | 'transfer';
 
+export interface DiscountCoupon {
+  id: string;
+  code: string;
+  title: string;
+  type: 'nominal' | 'percentage';
+  discountValue: number; // e.g. 15000 for Rp 15.000 or 10 for 10%
+  minSpend: number;
+  expiryDate: string;
+  description: string;
+  isActive: boolean;
+  usageCount?: number;
+}
+
 export interface Order {
   id: string;
   invoiceNumber: string;
@@ -46,6 +59,7 @@ export interface Order {
   taxAmount: number;
   taxRate: number; // e.g. 0.08 or 0.11
   discountAmount: number;
+  discountCode?: string;
   total: number;
   paymentMethod: PaymentMethod;
   amountPaid: number;
@@ -58,6 +72,8 @@ export interface Order {
   status: 'completed' | 'refunded';
   notes?: string;
   isSynced: boolean; // For offline sync tracking
+  refundReason?: string;
+  refundedAt?: string;
 }
 
 export interface Customer {

@@ -36,6 +36,9 @@ export const SalesView: React.FC = () => {
     setSearchQuery,
     currentUser,
     settings,
+    appliedCoupon,
+    orderDiscount,
+    setActiveView,
     t
   } = useApp();
 
@@ -216,15 +219,23 @@ export const SalesView: React.FC = () => {
               </div>
             )}
 
-            {/* Note Button */}
+            {/* Note & Discount Buttons */}
             {cart.length > 0 && (
-              <div className="pt-2">
+              <div className="pt-2 flex items-center justify-between gap-2">
                 <button
                   onClick={() => handleOpenNoteModal(cart[0].product.id, cart[0].notes)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   <FileEdit className="w-3.5 h-3.5 text-gray-400" />
                   <span>{t('addNote')}</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveView('discounts')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-teal-200 bg-teal-50 text-xs font-bold text-[#21938c] hover:bg-teal-100 transition-colors"
+                >
+                  <Tag className="w-3.5 h-3.5" />
+                  <span>{appliedCoupon ? `Kupon: ${appliedCoupon.code}` : '+ Kupon Promo'}</span>
                 </button>
               </div>
             )}
@@ -239,6 +250,17 @@ export const SalesView: React.FC = () => {
                   {formatCurrency(cartTotals.subtotal, settings.currency)}
                 </span>
               </div>
+              {orderDiscount > 0 && (
+                <div className="flex justify-between text-emerald-700 font-semibold bg-emerald-50 px-2 py-1 rounded-lg">
+                  <span className="flex items-center gap-1">
+                    <Tag className="w-3 h-3" />
+                    <span>Diskon ({appliedCoupon?.code || 'Kupon'}):</span>
+                  </span>
+                  <span className="font-bold">
+                    -{formatCurrency(orderDiscount, settings.currency)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>{t('tax')} ({(settings.taxRate * 100).toFixed(0)}%)</span>
                 <span className="font-semibold text-gray-800">

@@ -9,10 +9,15 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
-  Printer
+  Printer,
+  Tag,
+  Percent,
+  Scissors,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { PaymentMethod, Customer } from '../types';
+import { PaymentMethod, Customer, DiscountCoupon } from '../types';
 import { formatCurrency, calculateChange } from '../utils/rules';
 
 export const CheckoutModal: React.FC = () => {
@@ -25,6 +30,11 @@ export const CheckoutModal: React.FC = () => {
     addCustomer,
     settings,
     printerConfig,
+    discounts,
+    appliedCoupon,
+    applyDiscountCoupon,
+    removeDiscountCoupon,
+    orderDiscount,
     t
   } = useApp();
 
@@ -36,6 +46,11 @@ export const CheckoutModal: React.FC = () => {
   const [showAddCustomer, setShowAddCustomer] = useState<boolean>(false);
   const [newCustName, setNewCustName] = useState<string>('');
   const [newCustPhone, setNewCustPhone] = useState<string>('');
+
+  // Discount UI State
+  const [showDiscountAccordion, setShowDiscountAccordion] = useState<boolean>(false);
+  const [customVoucherInput, setCustomVoucherInput] = useState<string>('');
+  const [couponFeedback, setCouponFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   if (!isCheckoutModalOpen) return null;
 
@@ -61,6 +76,33 @@ export const CheckoutModal: React.FC = () => {
     setAmountPaidInput(String(value));
   };
 
+  const handleApplyCoupon = (coupon: DiscountCoupon) => {
+    const result = applyDiscountCoupon(coupon);
+    if (result.success) {
+      setCouponFeedback({ type: 'success', message: result.message });
+      setAmountPaidInput(String(cartTotals.subtotal - result.message.length > 0 ? total : total));
+    } else {
+      setCouponFeedback({ type: 'error', message: result.message });
+    }
+  };
+
+  const handleApplyCustomVoucher = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customVoucherInput.trim()) return;
+    const result = applyDiscountCoupon(customVoucherInput.trim());
+    if (result.success) {
+      setCouponFeedback({ type: 'success', message: result.message });
+      setCustomVoucherInput('');
+    } else {
+      setCouponFeedback({ type: 'error', message: result.message });
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    removeDiscountCoupon();
+    setCouponFeedback(null);
+  };
+
   const handleCreateCustomer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCustName.trim()) return;
@@ -82,7 +124,8 @@ export const CheckoutModal: React.FC = () => {
       method: paymentMethod,
       amountPaid: paymentMethod === 'cash' ? numericAmountPaid : total,
       customer,
-      notes: orderNotes.trim() || undefined
+      notes: orderNotes.trim() || undefined,
+      discountCode: appliedCoupon?.code
     });
   };
 
@@ -104,17 +147,175 @@ export const CheckoutModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Total Banner */}
-        <div className="my-4 p-4 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold text-teal-800 uppercase tracking-wider">{t('totalBill')}</span>
-            <div className="text-3xl font-extrabold text-[#21938c]">
-              {formatCurrency(total, settings.currency)}
+        {/* Bill Summary Banner with Discount Breakdown */}
+        <div className="my-4 p-4 rounded-2xl bg-teal-50 border border-teal-100 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold text-teal-800 uppercase tracking-wider">{t('totalBill')}</span>
+              <div className="text-3xl font-black text-[#21938c]">
+                {formatCurrency(total, settings.currency)}
+              </div>
+            </div>
+            <div className="text-right text-xs text-teal-700">
+              <span className="font-bold">{cartTotals.itemCount} {t('itemsCount')}</span>
+              {orderDiscount > 0 && (
+                <div className="text-[11px] text-emerald-700 font-extrabold bg-emerald-100/70 px-2 py-0.5 rounded-full mt-1">
+                  Diskon: -{formatCurrency(orderDiscount, settings.currency)}
+                </div>
+              )}
             </div>
           </div>
-          <div className="text-right text-xs text-teal-700">
-            <span>{cartTotals.itemCount} {t('itemsCount')}</span>
+
+          <div className="pt-2 border-t border-teal-200/60 flex justify-between text-xs text-teal-900/80">
+            <span>Subtotal: {formatCurrency(cartTotals.subtotal, settings.currency)}</span>
+            {orderDiscount > 0 && (
+              <span className="text-emerald-700 font-bold">
+                Kupon {appliedCoupon?.code}: -{formatCurrency(orderDiscount, settings.currency)}
+              </span>
+            )}
+            <span>Pajak (10%): {formatCurrency(cartTotals.taxAmount, settings.currency)}</span>
           </div>
+        </div>
+
+        {/* SECTION: PILIHAN DISKON & VOUCHER KASIR */}
+        <div className="mb-4 p-3.5 rounded-2xl bg-gray-50 border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Tag className="w-4 h-4 text-[#21938c]" />
+              <span className="text-xs font-bold text-gray-800">Kupon &amp; Diskon Transaksi</span>
+              {appliedCoupon && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono text-[10px] font-extrabold">
+                  {appliedCoupon.code}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowDiscountAccordion(!showDiscountAccordion)}
+              className="text-xs font-bold text-[#21938c] hover:underline flex items-center gap-1"
+            >
+              <span>{appliedCoupon ? 'Ubah Kupon' : 'Pilih / Masukkan Kupon'}</span>
+              {showDiscountAccordion ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          {/* Active Coupon Badge if applied */}
+          {appliedCoupon && !showDiscountAccordion && (
+            <div className="mt-2.5 flex items-center justify-between bg-white p-2.5 rounded-xl border border-emerald-200 text-xs text-emerald-800">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="font-bold">{appliedCoupon.title} ({appliedCoupon.code})</p>
+                  <p className="text-[11px] text-emerald-700">
+                    Hemat {formatCurrency(orderDiscount, settings.currency)}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveCoupon}
+                className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1 rounded-lg hover:bg-rose-50"
+              >
+                Hapus
+              </button>
+            </div>
+          )}
+
+          {/* Expandable Coupon Selector */}
+          {showDiscountAccordion && (
+            <div className="mt-3 pt-3 border-t border-gray-200 space-y-3 animate-in fade-in duration-150">
+              {/* Quick voucher input form */}
+              <form onSubmit={handleApplyCustomVoucher} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Ketik kode kupon (misal: HAPPYHOURS)"
+                  value={customVoucherInput}
+                  onChange={(e) => setCustomVoucherInput(e.target.value.toUpperCase())}
+                  className="flex-1 p-2 rounded-xl border border-gray-300 text-xs font-mono font-bold uppercase focus:border-[#21938c] focus:outline-hidden bg-white"
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-2 bg-[#21938c] hover:bg-[#1b7c76] text-white text-xs font-bold rounded-xl transition-colors"
+                >
+                  Terapkan
+                </button>
+              </form>
+
+              {/* Feedback Alert */}
+              {couponFeedback && (
+                <div
+                  className={`p-2 rounded-xl text-xs flex items-center gap-2 ${
+                    couponFeedback.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  }`}
+                >
+                  {couponFeedback.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  )}
+                  <span>{couponFeedback.message}</span>
+                </div>
+              )}
+
+              {/* List of Available Active Coupons */}
+              <div>
+                <p className="text-[11px] font-bold text-gray-500 mb-1.5 uppercase tracking-wide">
+                  Pilih dari Kupon Promo Tersedia:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                  {discounts
+                    .filter((d) => d.isActive)
+                    .map((d) => {
+                      const isEligible = cartTotals.subtotal >= d.minSpend;
+                      const isSelected = appliedCoupon?.id === d.id;
+
+                      return (
+                        <div
+                          key={d.id}
+                          onClick={() => isEligible && handleApplyCoupon(d)}
+                          className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-[#21938c] bg-teal-50 ring-1 ring-[#21938c]'
+                              : isEligible
+                              ? 'border-gray-200 bg-white hover:border-teal-300'
+                              : 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-xs font-bold text-[#21938c]">
+                              {d.code}
+                            </span>
+                            <span className="text-[11px] font-extrabold text-emerald-700">
+                              {d.type === 'percentage'
+                                ? `${d.discountValue}%`
+                                : formatCurrency(d.discountValue, settings.currency)}
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-semibold text-gray-800 truncate mt-0.5">{d.title}</p>
+                          <p className="text-[10px] text-gray-400">
+                            Min. Belanja: {formatCurrency(d.minSpend, settings.currency)}
+                          </p>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {appliedCoupon && (
+                <div className="pt-1 text-right">
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="text-xs text-rose-600 hover:underline font-semibold"
+                  >
+                    Batalkan / Lepas Diskon
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Customer Selector */}
@@ -282,7 +483,6 @@ export const CheckoutModal: React.FC = () => {
         {paymentMethod === 'qris' && (
           <div className="p-4 bg-[#f8fafc] rounded-2xl border border-gray-100 flex flex-col items-center text-center space-y-3">
             <div className="p-3 bg-white rounded-2xl border border-gray-200 shadow-xs">
-              {/* Dynamic QR Code simulation SVG */}
               <svg className="w-36 h-36" viewBox="0 0 100 100" fill="currentColor">
                 <rect x="0" y="0" width="30" height="30" className="text-gray-900" />
                 <rect x="5" y="5" width="20" height="20" className="text-white" />
@@ -340,7 +540,7 @@ export const CheckoutModal: React.FC = () => {
           <div className="p-4 bg-[#f8fafc] rounded-2xl border border-gray-100 space-y-2 text-xs text-gray-600">
             <p className="font-semibold text-gray-800">Rekening Tujuan Toko:</p>
             <div className="p-2.5 bg-white rounded-xl border border-gray-200 font-mono text-xs">
-              <p>BCA: 8820-1234-99 (PosyMart Indonesia)</p>
+              <p>BCA: 8820-1234-99 (ammar kafe)</p>
               <p>Mandiri: 137-00-9876543-1</p>
             </div>
           </div>

@@ -35,6 +35,7 @@ export const InventoryView: React.FC = () => {
   const [filterLowStockOnly, setFilterLowStockOnly] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -375,11 +376,7 @@ export const InventoryView: React.FC = () => {
                         </button>
                         {currentUser.role === 'admin' && (
                           <button
-                            onClick={() => {
-                              if (window.confirm(`Hapus produk "${p.name}"?`)) {
-                                deleteProduct(p.id);
-                              }
-                            }}
+                            onClick={() => setProductToDelete(p)}
                             className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50"
                             title="Hapus Produk"
                           >
@@ -549,6 +546,40 @@ export const InventoryView: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 text-center animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-900 mb-1">Hapus Produk?</h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Apakah Anda yakin ingin menghapus <strong>"{productToDelete.name}"</strong> dari katalog inventaris ammar kafe? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setProductToDelete(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteProduct(productToDelete.id);
+                  setProductToDelete(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 shadow-sm"
+              >
+                Ya, Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}

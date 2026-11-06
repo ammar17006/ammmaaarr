@@ -21,7 +21,8 @@ export const OrdersView: React.FC = () => {
     setActiveReceiptOrder,
     refundOrder,
     settings,
-    currentUser
+    currentUser,
+    setActiveView
   } = useApp();
 
   const [search, setSearch] = useState('');
@@ -161,14 +162,13 @@ export const OrdersView: React.FC = () => {
                         {currentUser.role === 'admin' && o.status === 'completed' && (
                           <button
                             onClick={() => {
-                              if (window.confirm(`Batalkan transaksi ${o.invoiceNumber} dan kembalikan stok?`)) {
-                                refundOrder(o.id);
-                              }
+                              setActiveView('returns');
                             }}
-                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Retur / Refund Transaksi"
+                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-1"
+                            title="Buka Pusat Retur & Refund Transaksi Ini"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-semibold hidden md:inline">Retur</span>
                           </button>
                         )}
                       </div>

@@ -51,7 +51,11 @@ export const ReceiptModal: React.FC = () => {
       `${settings.receiptFooter || 'Terima kasih atas kunjungan Anda!'}`;
 
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.click();
   };
 
   return (

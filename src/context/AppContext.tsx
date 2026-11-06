@@ -7,7 +7,8 @@ import {
   Customer,
   StoreSettings,
   PrinterConfig,
-  PaymentMethod
+  PaymentMethod,
+  DiscountCoupon
 } from '../types';
 import {
   INITIAL_PRODUCTS,
@@ -15,13 +16,15 @@ import {
   INITIAL_CUSTOMERS,
   INITIAL_SETTINGS,
   INITIAL_CART,
-  INITIAL_ORDERS
+  INITIAL_ORDERS,
+  INITIAL_DISCOUNTS
 } from '../data/initialData';
 import {
   calculateCartTotals,
   calculateChange,
   generateInvoiceNumber,
-  generateThermalESCCommands
+  generateThermalESCCommands,
+  formatCurrency
 } from '../utils/rules';
 import { translations, Language } from '../utils/translations';
 
@@ -62,12 +65,23 @@ interface AppContextType {
     amountPaid: number;
     customer?: Customer;
     notes?: string;
+    discountCode?: string;
   }) => Order;
-  refundOrder: (orderId: string) => void;
+  refundOrder: (orderId: string, reason?: string) => void;
   activeReceiptOrder: Order | null;
   setActiveReceiptOrder: (order: Order | null) => void;
   isCheckoutModalOpen: boolean;
   setIsCheckoutModalOpen: (open: boolean) => void;
+
+  // Discounts
+  discounts: DiscountCoupon[];
+  addDiscount: (discount: Omit<DiscountCoupon, 'id' | 'usageCount'>) => DiscountCoupon;
+  updateDiscount: (id: string, updates: Partial<DiscountCoupon>) => void;
+  deleteDiscount: (id: string) => void;
+  toggleDiscountStatus: (id: string) => void;
+  appliedCoupon: DiscountCoupon | null;
+  applyDiscountCoupon: (codeOrCoupon: string | DiscountCoupon) => { success: boolean; message: string };
+  removeDiscountCoupon: () => void;
 
   // Customers
   customers: Customer[];
@@ -120,7 +134,8 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'ammarkafe_current_user_v2',
   CUSTOMERS: 'ammarkafe_customers_v2',
   SETTINGS: 'ammarkafe_settings_v2',
-  PENDING_SYNC: 'ammarkafe_pending_sync_v2'
+  PENDING_SYNC: 'ammarkafe_pending_sync_v2',
+  DISCOUNTS: 'ammarkafe_discounts_v2'
 };
 
 // Automatic cleanup of legacy PosyMart caches with old dollar prices
@@ -219,8 +234,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         const parsed: Product[] = JSON.parse(saved);
-        // If any price is low like 3.5 or less than 1000, reset to INITIAL_PRODUCTS
-        if (parsed.some((p) => p.price < 1000)) {
+        // If any price is low like 3.5 or less than 1000 or fewer than 20 items, upgrade to full INITIAL_PRODUCTS
+        if (parsed.some((p) => p.price < 1000) || parsed.length < 20) {
           return INITIAL_PRODUCTS;
         }
         return parsed;
@@ -230,6 +245,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return INITIAL_PRODUCTS;
   });
+
+  // Discounts State
+  const [discounts, setDiscounts] = useState<DiscountCoupon[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.DISCOUNTS);
+    if (saved) {
+      try {
+        const parsed: DiscountCoupon[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        return INITIAL_DISCOUNTS;
+      } catch {
+        return INITIAL_DISCOUNTS;
+      }
+    }
+    return INITIAL_DISCOUNTS;
+  });
+  const [appliedCoupon, setAppliedCoupon] = useState<DiscountCoupon | null>(null);
 
   // Customers
   const [customers, setCustomers] = useState<Customer[]>(() => {
@@ -426,10 +457,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     amountPaid: number;
     customer?: Customer;
     notes?: string;
+    discountCode?: string;
   }) => {
     const seq = orders.length + 1;
     const invoiceNumber = generateInvoiceNumber(seq);
     const change = calculateChange(payment.amountPaid, cartTotals.total);
+    const effectiveDiscountCode = payment.discountCode || appliedCoupon?.code;
 
     const newOrder: Order = {
       id: `ord-${Date.now()}`,
@@ -439,6 +472,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       taxAmount: cartTotals.taxAmount,
       taxRate: settings.taxRate,
       discountAmount: orderDiscount,
+      discountCode: effectiveDiscountCode,
       total: cartTotals.total,
       paymentMethod: payment.method,
       amountPaid: payment.amountPaid,
@@ -452,6 +486,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes: payment.notes,
       isSynced: !isOffline
     };
+
+    // If discount used, increment usage count
+    if (effectiveDiscountCode) {
+      setDiscounts((prev) =>
+        prev.map((d) =>
+          d.code.toUpperCase() === effectiveDiscountCode.toUpperCase()
+            ? { ...d, usageCount: (d.usageCount || 0) + 1 }
+            : d
+        )
+      );
+    }
 
     // 1. Deduct stock in real-time
     setProducts((prev) =>
@@ -488,8 +533,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPendingSync((prev) => [...prev, newOrder.id]);
     }
 
-    // 5. Clear cart
+    // 5. Clear cart and reset coupon
     clearCart();
+    setAppliedCoupon(null);
 
     // 6. Set active receipt order for modal display
     setActiveReceiptOrder(newOrder);
@@ -503,7 +549,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newOrder;
   };
 
-  const refundOrder = (orderId: string) => {
+  const refundOrder = (orderId: string, reason?: string) => {
     setOrders((prev) =>
       prev.map((order) => {
         if (order.id === orderId && order.status === 'completed') {
@@ -511,11 +557,103 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           order.items.forEach((item) => {
             adjustStock(item.product.id, item.quantity);
           });
-          return { ...order, status: 'refunded' as const };
+          return {
+            ...order,
+            status: 'refunded' as const,
+            refundReason: reason || 'Permintaan Retur / Refund Pelanggan',
+            refundedAt: new Date().toISOString()
+          };
         }
         return order;
       })
     );
+  };
+
+  // Discount Coupons Management
+  const addDiscount = (discountData: Omit<DiscountCoupon, 'id' | 'usageCount'>) => {
+    const newDisc: DiscountCoupon = {
+      ...discountData,
+      id: `disc-${Date.now()}`,
+      code: discountData.code.trim().toUpperCase(),
+      usageCount: 0
+    };
+    setDiscounts((prev) => [newDisc, ...prev]);
+    return newDisc;
+  };
+
+  const updateDiscount = (id: string, updates: Partial<DiscountCoupon>) => {
+    setDiscounts((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, ...updates, code: updates.code ? updates.code.trim().toUpperCase() : d.code } : d))
+    );
+    if (appliedCoupon && appliedCoupon.id === id) {
+      setAppliedCoupon((prev) => (prev ? { ...prev, ...updates } : null));
+    }
+  };
+
+  const deleteDiscount = (id: string) => {
+    setDiscounts((prev) => prev.filter((d) => d.id !== id));
+    if (appliedCoupon && appliedCoupon.id === id) {
+      removeDiscountCoupon();
+    }
+  };
+
+  const toggleDiscountStatus = (id: string) => {
+    setDiscounts((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, isActive: !d.isActive } : d))
+    );
+  };
+
+  const applyDiscountCoupon = (codeOrCoupon: string | DiscountCoupon): { success: boolean; message: string } => {
+    let targetCoupon: DiscountCoupon | undefined;
+    if (typeof codeOrCoupon === 'string') {
+      const clean = codeOrCoupon.trim().toUpperCase();
+      targetCoupon = discounts.find((d) => d.code.toUpperCase() === clean);
+    } else {
+      targetCoupon = codeOrCoupon;
+    }
+
+    if (!targetCoupon) {
+      return { success: false, message: 'Kode kupon diskon tidak ditemukan.' };
+    }
+
+    if (!targetCoupon.isActive) {
+      return { success: false, message: `Kupon "${targetCoupon.code}" saat ini sedang dinonaktifkan.` };
+    }
+
+    // Check expiry if present
+    if (targetCoupon.expiryDate) {
+      const now = new Date();
+      const expiry = new Date(targetCoupon.expiryDate);
+      if (expiry < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
+        return { success: false, message: `Kupon "${targetCoupon.code}" telah kedaluwarsa pada ${targetCoupon.expiryDate}.` };
+      }
+    }
+
+    if (cartTotals.subtotal < targetCoupon.minSpend) {
+      return {
+        success: false,
+        message: `Minimal belanja untuk kupon ini adalah ${formatCurrency(targetCoupon.minSpend, settings.currency)} (Subtotal saat ini: ${formatCurrency(cartTotals.subtotal, settings.currency)}).`
+      };
+    }
+
+    let calculatedDiscount = 0;
+    if (targetCoupon.type === 'percentage') {
+      calculatedDiscount = Math.round((cartTotals.subtotal * targetCoupon.discountValue) / 100);
+    } else {
+      calculatedDiscount = Math.min(targetCoupon.discountValue, cartTotals.subtotal);
+    }
+
+    setOrderDiscount(calculatedDiscount);
+    setAppliedCoupon(targetCoupon);
+    return {
+      success: true,
+      message: `Kupon "${targetCoupon.code}" berhasil digunakan! Diskon ${formatCurrency(calculatedDiscount, settings.currency)}.`
+    };
+  };
+
+  const removeDiscountCoupon = () => {
+    setOrderDiscount(0);
+    setAppliedCoupon(null);
   };
 
   // Users & Multi-level auth with Password and PIN
@@ -768,6 +906,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActiveReceiptOrder,
         isCheckoutModalOpen,
         setIsCheckoutModalOpen,
+        discounts,
+        addDiscount,
+        updateDiscount,
+        deleteDiscount,
+        toggleDiscountStatus,
+        appliedCoupon,
+        applyDiscountCoupon,
+        removeDiscountCoupon,
         customers,
         addCustomer,
         currentUser,
