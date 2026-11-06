@@ -6,6 +6,7 @@ import {
   formatCurrency,
   generateInvoiceNumber,
   calculateReportMetrics,
+  calculateCashierPerformance,
   generateThermalESCCommands
 } from './rules';
 import { CartItem, Order, Product, StoreSettings } from '../types';
@@ -162,4 +163,58 @@ test('generateThermalESCCommands produces valid ESC/POS byte sequence', () => {
   // Starts with ESC @ (0x1b, 0x40)
   assert.equal(escBytes[0], 0x1b);
   assert.equal(escBytes[1], 0x40);
+});
+
+test('calculateCashierPerformance calculates orders, revenue and payment breakdown per cashier', () => {
+  const sampleOrder1: Order = {
+    id: 'ord-1',
+    invoiceNumber: 'TRX-1',
+    items: [{ product: sampleProductA, quantity: 2 }],
+    subtotal: 50000,
+    taxAmount: 5000,
+    taxRate: 0.1,
+    discountAmount: 0,
+    total: 55000,
+    paymentMethod: 'cash',
+    amountPaid: 60000,
+    change: 5000,
+    cashierId: 'u1',
+    cashierName: 'jamil',
+    createdAt: new Date().toISOString(),
+    status: 'completed',
+    isSynced: true
+  };
+
+  const sampleOrder2: Order = {
+    id: 'ord-2',
+    invoiceNumber: 'TRX-2',
+    items: [{ product: sampleProductB, quantity: 1 }],
+    subtotal: 20000,
+    taxAmount: 2000,
+    taxRate: 0.1,
+    discountAmount: 0,
+    total: 22000,
+    paymentMethod: 'qris',
+    amountPaid: 22000,
+    change: 0,
+    cashierId: 'u2',
+    cashierName: 'saeja',
+    createdAt: new Date().toISOString(),
+    status: 'completed',
+    isSynced: true
+  };
+
+  const performance = calculateCashierPerformance([sampleOrder1, sampleOrder2]);
+  assert.equal(performance.length, 2);
+  // Sorted by totalSales descending: jamil (55000) > saeja (22000)
+  assert.equal(performance[0].cashierName, 'jamil');
+  assert.equal(performance[0].totalSales, 55000);
+  assert.equal(performance[0].cashTotal, 55000);
+  assert.equal(performance[0].totalItemsSold, 2);
+  assert.equal(performance[0].topItemName, 'Cappuccino');
+
+  assert.equal(performance[1].cashierName, 'saeja');
+  assert.equal(performance[1].totalSales, 22000);
+  assert.equal(performance[1].qrisTotal, 22000);
+  assert.equal(performance[1].totalItemsSold, 1);
 });

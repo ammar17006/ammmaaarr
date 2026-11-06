@@ -90,31 +90,50 @@ export const SalesView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Top Banner Kasir Aktif */}
-      <div className="bg-gradient-to-r from-teal-700 via-[#1b7c76] to-[#21938c] text-white p-4 sm:p-5 rounded-3xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
-            <ShoppingCart className="w-5 h-5 text-white" />
+      {/* Top Banner & Kasir Status (Model Kupon Diskon & Promo Kasir) */}
+      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-[#21938c] text-[11px] font-bold mb-1 border border-teal-100">
+            <ShoppingCart className="w-3.5 h-3.5" />
+            <span>Mesin Kasir POS &bull; ammar kafe</span>
           </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold flex items-center gap-2">
-              <span>Mesin Kasir POS &bull; Penjualan Langsung</span>
-              <span className="text-[10px] bg-emerald-400 text-emerald-950 font-extrabold px-2 py-0.5 rounded-full uppercase">
-                Siap Transaksi
-              </span>
-            </h2>
-            <p className="text-xs text-teal-100 mt-0.5">
-              Kasir Bertugas: <strong className="capitalize">{currentUser.name}</strong> ({currentUser.role === 'admin' ? 'Administrator' : 'Kasir'}) &bull; Klik foto produk atau tombol (+) untuk memasukkan ke keranjang
-            </p>
-          </div>
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span>Penjualan Langsung &amp; Kasir</span>
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2.5 py-0.5 rounded-full uppercase border border-emerald-200">
+              Siap Transaksi
+            </span>
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Kasir Bertugas: <strong className="text-gray-800 capitalize">{currentUser.name}</strong> ({currentUser.role === 'admin' ? 'Administrator' : 'Kasir'}) &bull; Klik foto produk atau tombol (+) untuk memasukkan pesanan
+          </p>
         </div>
 
-        {lastAddedProduct && (
-          <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 animate-in fade-in slide-in-from-right duration-200">
-            <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-            <span>+1 {lastAddedProduct} ditambahkan!</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {lastAddedProduct && (
+            <div className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-1.5 animate-in fade-in slide-in-from-right duration-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>+1 {lastAddedProduct} ditambahkan!</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => setActiveView('discounts')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-bold text-gray-700 transition-colors"
+            title="Lihat Daftar Kupon Promo"
+          >
+            <Tag className="w-3.5 h-3.5 text-[#21938c]" />
+            <span>Kupon Promo</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('returns')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-bold text-gray-700 transition-colors"
+            title="Pusat Retur & Refund"
+          >
+            <span className="text-rose-600 font-bold">&bull;</span>
+            <span>Retur &amp; Refund</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Grid: Left Cart + Right Catalog */}

@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Copy,
   Check,
+  ShieldCheck,
   X
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -53,12 +54,18 @@ export const DiscountsView: React.FC = () => {
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
 
+  const isAdmin = currentUser.role === 'admin';
+
   const showToast = (msg: string) => {
     setFeedbackToast(msg);
     setTimeout(() => setFeedbackToast(null), 2500);
   };
 
   const handleOpenAddModal = () => {
+    if (!isAdmin) {
+      showToast('Hanya Administrator (ammar) yang dapat menambah kupon diskon!');
+      return;
+    }
     setEditingCoupon(null);
     setCode('');
     setTitle('');
@@ -72,6 +79,10 @@ export const DiscountsView: React.FC = () => {
   };
 
   const handleOpenEditModal = (coupon: DiscountCoupon) => {
+    if (!isAdmin) {
+      showToast('Hanya Administrator (ammar) yang dapat mengedit kupon diskon!');
+      return;
+    }
     setEditingCoupon(coupon);
     setCode(coupon.code);
     setTitle(coupon.title);
@@ -86,6 +97,10 @@ export const DiscountsView: React.FC = () => {
 
   const handleSaveCoupon = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      showToast('Hanya Administrator (ammar) yang berhak menyimpan kupon diskon!');
+      return;
+    }
     if (!code.trim() || !title.trim() || discountValue <= 0) return;
 
     if (editingCoupon) {
@@ -162,18 +177,27 @@ export const DiscountsView: React.FC = () => {
           </div>
           <h1 className="text-xl font-bold text-gray-900">Kupon Diskon &amp; Promo Kasir</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Admin dapat menambah, mengedit potongan harga, dan mengaktifkan voucher untuk transaksi kasir
+            {isAdmin
+              ? 'Mode Admin: Anda dapat menambah, mengedit potongan harga, dan mengaktifkan voucher untuk kasir'
+              : 'Mode Kasir: Anda dapat melihat dan menerapkan kupon promo aktif saat transaksi pembayaran'}
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleOpenAddModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#21938c] hover:bg-[#1b7c76] text-white text-xs font-bold shadow-md shadow-teal-700/20 transition-all active:scale-95"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Tambah Kupon Baru</span>
-          </button>
+          {isAdmin ? (
+            <button
+              onClick={handleOpenAddModal}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#21938c] hover:bg-[#1b7c76] text-white text-xs font-bold shadow-md shadow-teal-700/20 transition-all active:scale-95"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Tambah Kupon Baru</span>
+            </button>
+          ) : (
+            <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
+              <ShieldCheck className="w-4 h-4 text-amber-600" />
+              <span>Akses Khusus Admin untuk Tambah/Edit</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -241,18 +265,32 @@ export const DiscountsView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => toggleDiscountStatus(coupon.id)}
-                      className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full transition-colors flex items-center gap-1 ${
-                        coupon.isActive
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}
-                      title={coupon.isActive ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan'}
-                    >
-                      <Power className="w-2.5 h-2.5" />
-                      <span>{coupon.isActive ? 'Aktif' : 'Nonaktif'}</span>
-                    </button>
+                    {isAdmin ? (
+                      <button
+                        onClick={() => toggleDiscountStatus(coupon.id)}
+                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full transition-colors flex items-center gap-1 ${
+                          coupon.isActive
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-gray-200 text-gray-600'
+                        }`}
+                        title={coupon.isActive ? 'Klik untuk nonaktifkan kupon' : 'Klik untuk aktifkan kupon'}
+                      >
+                        <Power className="w-2.5 h-2.5" />
+                        <span>{coupon.isActive ? 'Aktif' : 'Nonaktif'}</span>
+                      </button>
+                    ) : (
+                      <span
+                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                          coupon.isActive
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-gray-200 text-gray-600'
+                        }`}
+                        title="Status kupon promo"
+                      >
+                        <Power className="w-2.5 h-2.5" />
+                        <span>{coupon.isActive ? 'Aktif' : 'Nonaktif'}</span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -292,25 +330,29 @@ export const DiscountsView: React.FC = () => {
 
               {/* Bottom Actions */}
               <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleOpenEditModal(coupon)}
-                    className="p-2 rounded-xl text-gray-500 hover:text-[#21938c] hover:bg-teal-50 transition-colors"
-                    title="Edit Kupon Diskon"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      deleteDiscount(coupon.id);
-                      showToast(`Kupon ${coupon.code} berhasil dihapus.`);
-                    }}
-                    className="p-2 rounded-xl text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                    title="Hapus Kupon Diskon"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {isAdmin ? (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleOpenEditModal(coupon)}
+                      className="p-2 rounded-xl text-gray-500 hover:text-[#21938c] hover:bg-teal-50 transition-colors"
+                      title="Edit Kupon Diskon (Khusus Admin)"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        deleteDiscount(coupon.id);
+                        showToast(`Kupon ${coupon.code} berhasil dihapus.`);
+                      }}
+                      className="p-2 rounded-xl text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="Hapus Kupon Diskon (Khusus Admin)"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-gray-400 italic">Promo Tersedia</span>
+                )}
 
                 {isCurrentlyApplied ? (
                   <button

@@ -176,6 +176,136 @@ export function calculateReportMetrics(
   };
 }
 
+export interface CashierPerformance {
+  cashierName: string;
+  cashierId?: string;
+  totalOrders: number;
+  totalSales: number;
+  totalItemsSold: number;
+  avgOrderValue: number;
+  salesPercentage: number;
+  cashTotal: number;
+  qrisTotal: number;
+  debitTotal: number;
+  transferTotal: number;
+  refundOrdersCount: number;
+  refundTotal: number;
+  topItemName: string;
+  topItemQuantity: number;
+}
+
+/**
+ * Calculates detailed performance metrics for each cashier across sales, orders, and payment methods.
+ */
+export function calculateCashierPerformance(
+  orders: Order[],
+  startDate?: string,
+  endDate?: string
+): CashierPerformance[] {
+  const filteredOrders = orders.filter((o) => {
+    if (!startDate && !endDate) return true;
+    const orderDate = o.createdAt.split('T')[0];
+    if (startDate && orderDate < startDate) return false;
+    if (endDate && orderDate > endDate) return false;
+    return true;
+  });
+
+  const overallCompletedSales = filteredOrders
+    .filter((o) => o.status === 'completed')
+    .reduce((sum, o) => sum + o.total, 0);
+
+  const map: Record<string, {
+    cashierName: string;
+    cashierId?: string;
+    completedOrders: number;
+    totalSales: number;
+    totalItems: number;
+    cashTotal: number;
+    qrisTotal: number;
+    debitTotal: number;
+    transferTotal: number;
+    refundOrdersCount: number;
+    refundTotal: number;
+    itemsMap: Record<string, { name: string; qty: number }>;
+  }> = {};
+
+  filteredOrders.forEach((o) => {
+    const name = o.cashierName || 'Kasir';
+    if (!map[name]) {
+      map[name] = {
+        cashierName: name,
+        cashierId: o.cashierId,
+        completedOrders: 0,
+        totalSales: 0,
+        totalItems: 0,
+        cashTotal: 0,
+        qrisTotal: 0,
+        debitTotal: 0,
+        transferTotal: 0,
+        refundOrdersCount: 0,
+        refundTotal: 0,
+        itemsMap: {}
+      };
+    }
+
+    if (o.status === 'completed') {
+      map[name].completedOrders += 1;
+      map[name].totalSales += o.total;
+
+      if (o.paymentMethod === 'cash') map[name].cashTotal += o.total;
+      else if (o.paymentMethod === 'qris') map[name].qrisTotal += o.total;
+      else if (o.paymentMethod === 'debit') map[name].debitTotal += o.total;
+      else if (o.paymentMethod === 'transfer') map[name].transferTotal += o.total;
+
+      o.items.forEach((item) => {
+        map[name].totalItems += item.quantity;
+        const prodName = item.product.name;
+        if (!map[name].itemsMap[prodName]) {
+          map[name].itemsMap[prodName] = { name: prodName, qty: 0 };
+        }
+        map[name].itemsMap[prodName].qty += item.quantity;
+      });
+    } else if (o.status === 'refunded') {
+      map[name].refundOrdersCount += 1;
+      map[name].refundTotal += o.total;
+    }
+  });
+
+  return Object.values(map)
+    .map((c) => {
+      let topItemName = '-';
+      let topItemQuantity = 0;
+      Object.values(c.itemsMap).forEach((item) => {
+        if (item.qty > topItemQuantity) {
+          topItemName = item.name;
+          topItemQuantity = item.qty;
+        }
+      });
+
+      const avgOrderValue = c.completedOrders > 0 ? c.totalSales / c.completedOrders : 0;
+      const salesPercentage = overallCompletedSales > 0 ? (c.totalSales / overallCompletedSales) * 100 : 0;
+
+      return {
+        cashierName: c.cashierName,
+        cashierId: c.cashierId,
+        totalOrders: c.completedOrders,
+        totalSales: Number(c.totalSales.toFixed(2)),
+        totalItemsSold: c.totalItems,
+        avgOrderValue: Number(avgOrderValue.toFixed(2)),
+        salesPercentage: Number(salesPercentage.toFixed(1)),
+        cashTotal: Number(c.cashTotal.toFixed(2)),
+        qrisTotal: Number(c.qrisTotal.toFixed(2)),
+        debitTotal: Number(c.debitTotal.toFixed(2)),
+        transferTotal: Number(c.transferTotal.toFixed(2)),
+        refundOrdersCount: c.refundOrdersCount,
+        refundTotal: Number(c.refundTotal.toFixed(2)),
+        topItemName,
+        topItemQuantity
+      };
+    })
+    .sort((a, b) => b.totalSales - a.totalSales);
+}
+
 /**
  * Generates ESC/POS thermal printer byte array commands.
  * Compatible with standard 58mm and 80mm Bluetooth/USB thermal receipt printers.
