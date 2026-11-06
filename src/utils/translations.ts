@@ -4,7 +4,7 @@ export const translations = {
   id: {
     // Brand
     brandName: 'ammar kafe',
-    welcomeBack: 'Selamat datang kembali',
+    welcomeBack: 'Halo',
     storeSubtitle: 'Berikut ringkasan performa kafe Anda hari ini.',
     searchPlaceholder: 'Cari apapun... ⌘K',
 

@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
-            {t('welcomeBack')}, {currentUser.name.split(' ')[0]}!
+            {t('welcomeBack')}, {currentUser.name}!
             <span className="text-xl">👋</span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 font-normal">

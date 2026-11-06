@@ -105,38 +105,38 @@ export const DashboardView: React.FC = () => {
 
       {/* Top Hero Banner: Overview Ammar Kafe & Quick Actions */}
       <div className="bg-gradient-to-r from-[#176d67] via-[#1e837c] to-[#21938c] rounded-3xl p-5 sm:p-7 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-        <div className="space-y-1.5 max-w-xl">
+        <div className="space-y-1.5 flex-1 min-w-0 max-w-xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-xs text-[11px] font-bold text-teal-100">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             <span>Dashboard Eksekutif &bull; {settings.storeName || 'Ammar Kafe'}</span>
           </div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">
-            Selamat Datang, <span className="capitalize">{currentUser.name}</span>!
+            Halo, <span className="capitalize">{currentUser.name}</span>!
           </h1>
           <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed">
             Berikut ringkasan performa penjualan, arus kas masuk, dan statistik operasional kafe hari ini. Semua data tersinkronisasi real-time.
           </p>
         </div>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+        {/* CTA Buttons - Aligned to the right for symmetry with card text */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-start sm:justify-end gap-2.5 w-full md:w-auto md:ml-auto shrink-0">
           <button
             onClick={() => setActiveView('sales')}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white text-[#21938c] hover:bg-teal-50 font-bold text-xs sm:text-sm shadow-md shadow-teal-950/20 transition-all active:scale-95"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white text-[#21938c] hover:bg-teal-50 font-bold text-xs sm:text-sm shadow-md shadow-teal-950/20 transition-all active:scale-95 shrink-0 whitespace-nowrap"
           >
             <ShoppingCart className="w-4 h-4 text-[#21938c]" />
             <span>Buka Mesin Kasir POS</span>
           </button>
           <button
             onClick={() => setActiveView('products')}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs sm:text-sm backdrop-blur-xs transition-colors"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs sm:text-sm backdrop-blur-xs transition-colors shrink-0 whitespace-nowrap"
           >
             <Package className="w-4 h-4" />
             <span>Kelola Menu</span>
           </button>
           <button
             onClick={() => setActiveView('reports')}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs sm:text-sm backdrop-blur-xs transition-colors"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs sm:text-sm backdrop-blur-xs transition-colors shrink-0 whitespace-nowrap"
           >
             <BarChart3 className="w-4 h-4" />
             <span>Laporan</span>
