@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
+import { SalesView } from './components/SalesView';
 import { InventoryView } from './components/InventoryView';
 import { ReportsView } from './components/ReportsView';
 import { OrdersView } from './components/OrdersView';
@@ -47,7 +48,8 @@ const AppContent: React.FC = () => {
 
         {/* Dynamic Page Views */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 custom-scrollbar">
-          {(activeView === 'dashboard' || activeView === 'sales') && <DashboardView />}
+          {activeView === 'dashboard' && <DashboardView />}
+          {activeView === 'sales' && <SalesView />}
           {activeView === 'products' && <InventoryView />}
           {activeView === 'reports' && <ReportsView />}
           {activeView === 'orders' && <OrdersView />}
