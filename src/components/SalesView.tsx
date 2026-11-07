@@ -138,8 +138,8 @@ export const SalesView: React.FC = () => {
 
       {/* Main Grid: Left Cart + Right Catalog */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
-        {/* Left Column: Current Sale (Cart) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-5 border border-gray-100 shadow-xs flex flex-col justify-between min-h-[580px] lg:sticky lg:top-20">
+        {/* Left Column: Current Sale (Cart) - Menempel ke atas saat scroll produk */}
+        <div className="lg:col-span-5 bg-white rounded-3xl p-5 border border-gray-100 shadow-xs flex flex-col justify-between min-h-[560px] lg:sticky lg:top-0 self-start">
           <div>
             {/* Header Keranjang */}
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">

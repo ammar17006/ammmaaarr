@@ -94,6 +94,8 @@ interface AppContextType {
   setIsAuthenticated: (auth: boolean) => void;
   switchUser: (user: User) => void;
   addUser: (user: Omit<User, 'id'>) => void;
+  updateUser: (id: string, updates: Partial<User>) => void;
+  deleteUser: (id: string) => boolean;
   verifyPinAndLogin: (userId: string, pinOrPassword: string) => boolean;
   loginWithPasswordOrPin: (identifier: string, secret: string) => { success: boolean; message?: string };
   lockScreen: () => void;
@@ -712,11 +714,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addUser = (userData: Omit<User, 'id'>) => {
+    if (currentUser.role !== 'admin') {
+      console.warn('Hanya admin yang dapat menambah akun kasir.');
+      return;
+    }
     const newUser: User = {
       ...userData,
       id: `usr-${Date.now()}`
     };
     setUsers((prev) => [...prev, newUser]);
+  };
+
+  const updateUser = (id: string, updates: Partial<User>) => {
+    if (currentUser.role !== 'admin') {
+      console.warn('Hanya admin yang dapat mengedit akun kasir.');
+      return;
+    }
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === id) {
+          const updated = { ...u, ...updates };
+          if (currentUser.id === id) {
+            setCurrentUser(updated);
+          }
+          return updated;
+        }
+        return u;
+      })
+    );
+  };
+
+  const deleteUser = (id: string): boolean => {
+    if (currentUser.role !== 'admin') {
+      console.warn('Hanya admin yang dapat menghapus akun kasir.');
+      return false;
+    }
+    // Prevent deleting ammar (main administrator) or currently active user
+    if (id === currentUser.id || id === 'usr-1') {
+      return false;
+    }
+    setUsers((prev) => prev.filter((u) => u.id !== id));
+    return true;
   };
 
   // Offline Sync
@@ -922,6 +960,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsAuthenticated,
         switchUser,
         addUser,
+        updateUser,
+        deleteUser,
         verifyPinAndLogin,
         loginWithPasswordOrPin,
         lockScreen,

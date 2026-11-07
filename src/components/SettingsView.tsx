@@ -23,6 +23,7 @@ export const SettingsView: React.FC = () => {
   const {
     settings,
     updateSettings,
+    currentUser,
     isOffline,
     setIsOffline,
     pendingSyncCount,
@@ -34,6 +35,7 @@ export const SettingsView: React.FC = () => {
     t
   } = useApp();
 
+  const isAdmin = currentUser.role === 'admin';
   const [formData, setFormData] = useState({ ...settings });
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
@@ -46,6 +48,7 @@ export const SettingsView: React.FC = () => {
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) return;
     updateSettings(formData);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
@@ -111,9 +114,16 @@ export const SettingsView: React.FC = () => {
                 <Store className="w-4 h-4 text-[#21938c]" />
                 <span>Informasi Toko &amp; Struk Kasir</span>
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-[#21938c] border border-teal-100">
-                Format Cetak
-              </span>
+              {isAdmin ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-[#21938c] border border-teal-100">
+                  Format Cetak
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-amber-600" />
+                  <span>Khusus Administrator</span>
+                </span>
+              )}
             </div>
 
             <div className="space-y-4 text-xs">
@@ -122,9 +132,12 @@ export const SettingsView: React.FC = () => {
                 <input
                   type="text"
                   required
+                  disabled={!isAdmin}
                   value={formData.storeName}
                   onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#21938c]"
+                  className={`w-full p-2.5 rounded-xl border border-gray-200 transition-colors ${
+                    !isAdmin ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-hidden focus:border-[#21938c]'
+                  }`}
                 />
               </div>
 
@@ -132,10 +145,13 @@ export const SettingsView: React.FC = () => {
                 <label className="font-bold text-gray-700 block mb-1">Tagline / Slogan</label>
                 <input
                   type="text"
+                  disabled={!isAdmin}
                   value={formData.tagline}
                   onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
                   placeholder="Contoh: Nikmati Kopi Pilihan & Santapan Hangat"
-                  className="w-full p-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#21938c]"
+                  className={`w-full p-2.5 rounded-xl border border-gray-200 transition-colors ${
+                    !isAdmin ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-hidden focus:border-[#21938c]'
+                  }`}
                 />
               </div>
 
@@ -144,9 +160,12 @@ export const SettingsView: React.FC = () => {
                   <label className="font-bold text-gray-700 block mb-1">Nomor Telepon / WhatsApp</label>
                   <input
                     type="text"
+                    disabled={!isAdmin}
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#21938c]"
+                    className={`w-full p-2.5 rounded-xl border border-gray-200 transition-colors ${
+                      !isAdmin ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-hidden focus:border-[#21938c]'
+                    }`}
                   />
                 </div>
 
@@ -154,9 +173,12 @@ export const SettingsView: React.FC = () => {
                   <label className="font-bold text-gray-700 block mb-1">Alamat Email Toko</label>
                   <input
                     type="email"
+                    disabled={!isAdmin}
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#21938c]"
+                    className={`w-full p-2.5 rounded-xl border border-gray-200 transition-colors ${
+                      !isAdmin ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-hidden focus:border-[#21938c]'
+                    }`}
                   />
                 </div>
               </div>
@@ -165,9 +187,12 @@ export const SettingsView: React.FC = () => {
                 <label className="font-bold text-gray-700 block mb-1">Alamat Lengkap (Tercetak di Struk)</label>
                 <input
                   type="text"
+                  disabled={!isAdmin}
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#21938c]"
+                  className={`w-full p-2.5 rounded-xl border border-gray-200 transition-colors ${
+                    !isAdmin ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-hidden focus:border-[#21938c]'
+                  }`}
                 />
               </div>
 
@@ -183,9 +208,12 @@ export const SettingsView: React.FC = () => {
                 <div>
                   <label className="font-bold text-gray-700 block mb-1">{t('taxRateLabel')}</label>
                   <select
+                    disabled={!isAdmin}
                     value={formData.taxRate}
                     onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
-                    className="w-full p-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#21938c] bg-white"
+                    className={`w-full p-2.5 rounded-xl border border-gray-200 transition-colors ${
+                      !isAdmin ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-hidden focus:border-[#21938c] bg-white'
+                    }`}
                   >
                     <option value="0.10">10% (PB1 Resto/Kafe)</option>
                     <option value="0.11">11% (PPN Indonesia)</option>
@@ -199,10 +227,13 @@ export const SettingsView: React.FC = () => {
                 <label className="font-bold text-gray-700 block mb-1">Pesan Footer Struk Pembayaran</label>
                 <textarea
                   rows={2}
+                  disabled={!isAdmin}
                   value={formData.receiptFooter}
                   onChange={(e) => setFormData({ ...formData, receiptFooter: e.target.value })}
                   placeholder="Terima kasih atas kunjungan Anda di ammar kafe!"
-                  className="w-full p-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#21938c]"
+                  className={`w-full p-2.5 rounded-xl border border-gray-200 transition-colors ${
+                    !isAdmin ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-hidden focus:border-[#21938c]'
+                  }`}
                 />
               </div>
             </div>
@@ -214,13 +245,24 @@ export const SettingsView: React.FC = () => {
               </div>
             )}
 
-            <div className="flex justify-end pt-2 border-t border-gray-100">
-              <button
-                type="submit"
-                className="px-6 py-2.5 rounded-xl bg-[#21938c] text-white text-xs font-bold hover:bg-[#1b7c76] shadow-sm transition-all active:scale-95"
-              >
-                Simpan Perubahan
-              </button>
+            <div className="pt-2 border-t border-gray-100">
+              {isAdmin ? (
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-[#21938c] text-white text-xs font-bold hover:bg-[#1b7c76] shadow-sm transition-all active:scale-95"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    <strong>Mode Kasir:</strong> Hanya Administrator (<strong>ammar</strong>) yang dapat mengubah profil toko, kontak, alamat, dan format struk kasir.
+                  </span>
+                </div>
+              )}
             </div>
           </form>
         </div>
@@ -383,36 +425,42 @@ export const SettingsView: React.FC = () => {
                 <p className="text-xs font-bold text-gray-800">Reset ke Data Bawaan Demo</p>
                 <p className="text-[11px] text-gray-400">Kembalikan produk dan transaksi awal ammar kafe</p>
               </div>
-              {showResetConfirm ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-rose-600">Yakin reset?</span>
+              {isAdmin ? (
+                showResetConfirm ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-rose-600">Yakin reset?</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowResetConfirm(false)}
+                      className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowResetConfirm(false);
+                        resetToDefaultData();
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 shadow-sm"
+                    >
+                      Ya, Reset
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => setShowResetConfirm(false)}
-                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                    onClick={() => setShowResetConfirm(true)}
+                    className="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto"
                   >
-                    Batal
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reset Demo</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowResetConfirm(false);
-                      resetToDefaultData();
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 shadow-sm"
-                  >
-                    Ya, Reset
-                  </button>
-                </div>
+                )
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowResetConfirm(true)}
-                  className="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset Demo</span>
-                </button>
+                <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg">
+                  Khusus Admin
+                </span>
               )}
             </div>
           </div>
